@@ -41,5 +41,6 @@ public class Tenant {
         private String logoUrl;
         private String whatsappNumber;
         private String supportEmail;
+        private String agentName;
     }
 }

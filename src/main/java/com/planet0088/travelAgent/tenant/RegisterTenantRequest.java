@@ -27,4 +27,5 @@ public class RegisterTenantRequest {
 
     private String timezone;
     private String currency;
+    private String agentName;
 }

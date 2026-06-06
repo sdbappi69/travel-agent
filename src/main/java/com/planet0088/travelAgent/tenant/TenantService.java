@@ -32,6 +32,7 @@ public class TenantService {
             .settings(Tenant.TenantSettings.builder()
                 .timezone(request.getTimezone())
                 .currency(request.getCurrency())
+                .agentName(request.getAgentName())
                 .build())
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -69,5 +70,10 @@ public class TenantService {
     public Tenant getByIdOrThrow(String id) {
         return tenantRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
+    }
+
+    public Tenant getByTenantId(String tenantId) {
+        return tenantRepository.findById(tenantId)
+            .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId));
     }
 }

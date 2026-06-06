@@ -1,6 +1,7 @@
 package com.planet0088.travelAgent.security;
 
 import com.planet0088.travelAgent.config.CorsProperties;
+import com.planet0088.travelAgent.config.SecurityProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -29,19 +30,24 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final CorsProperties corsProperties;
+    private final SecurityProperties securityProperties;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/api/tenants/register").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                .requestMatchers(HttpMethod.GET,  "/api/health").permitAll()
-                .requestMatchers("/ws/**").permitAll()
-                .anyRequest().authenticated()
-            )
+            .authorizeHttpRequests(auth -> {
+                securityProperties.getPermitAll().getPost()
+                        .forEach(p -> auth.requestMatchers(HttpMethod.POST, p).permitAll());
+                securityProperties.getPermitAll().getGet()
+                        .forEach(p -> auth.requestMatchers(HttpMethod.GET, p).permitAll());
+                var anyPaths = securityProperties.getPermitAll().getAny();
+                if (!anyPaths.isEmpty()) {
+                    auth.requestMatchers(anyPaths.toArray(String[]::new)).permitAll();
+                }
+                auth.anyRequest().authenticated();
+            })
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .build();

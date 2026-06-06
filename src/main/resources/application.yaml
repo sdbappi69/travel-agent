@@ -1,4 +1,11 @@
 spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.7
   data:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27017}
@@ -11,6 +18,24 @@ server:
   port: 8080
 
 travelagent:
+  security:
+    permit-all:
+      post:
+        - /api/tenants/register
+        - /api/auth/login
+      get:
+        - /api/health
+        - /api/agent/stream/**
+      any:
+        - /ws/**
+        - /
+        - /**.html
+        - /**.css
+        - /**.js
+        - /static/**
+  agent:
+    intake:
+      system-prompt: classpath:prompts/intake-system-prompt.txt
   jwt:
     secret: ${JWT_SECRET:travel-agent-dev-secret-key-minimum-256-bits-long!!}
     expiration-ms: 86400000
