@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TimeFly — Agent Test Client</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #f8fafc;
+      color: #1e293b;
+      font-size: 14px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1e40af;
+      color: #fff;
+      padding: 13px 24px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      flex-shrink: 0;
+    }
+
+    /* ── Connection panel ── */
+    .connection-panel {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin: 12px 12px 0;
+      padding: 14px 16px;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .form-field label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .form-field input {
+      padding: 7px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #f8fafc;
+    }
+
+    .form-field input:focus { border-color: #2563eb; background: #fff; }
+
+    .btn {
+      padding: 8px 18px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: background 0.15s;
+      align-self: flex-end;
+    }
+
+    .btn:hover:not(:disabled) { background: #1d4ed8; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    .status-line {
+      margin-top: 9px;
+      font-size: 0.82rem;
+      color: #475569;
+      min-height: 1.2em;
+    }
+
+    .status-line.error { color: #dc2626; }
+
+    /* ── Chat section ── */
+    .chat-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin: 10px 12px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 400px;
+      padding: 14px 16px;
+      scroll-behavior: smooth;
+    }
+
+    /* ── Bubbles ── */
+    .bubble-wrap {
+      display: flex;
+      margin: 6px 0;
+    }
+
+    .bubble-wrap.user      { justify-content: flex-end; }
+    .bubble-wrap.assistant { justify-content: flex-start; }
+    .bubble-wrap.system    { justify-content: center; }
+
+    .bubble {
+      max-width: 70%;
+      border-radius: 12px;
+      padding: 8px 14px;
+      display: block;
+      word-break: break-word;
+    }
+
+    .bubble-wrap.user .bubble {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .bubble-wrap.assistant .bubble {
+      background: #f3f4f6;
+      color: #111;
+      white-space: normal;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .bubble-wrap.assistant .bubble-text {
+      white-space: normal;
+      line-height: 1.6;
+    }
+
+    .bubble-wrap.assistant .bubble h3,
+    .bubble-wrap.assistant .bubble h4 { margin: 6px 0 2px; font-size: 1em; }
+    .bubble-wrap.assistant .bubble ul  { margin: 4px 0 4px 18px; }
+    .bubble-wrap.assistant .bubble li  { margin: 2px 0; }
+    .bubble-wrap.assistant .bubble p   { margin: 4px 0; }
+
+    .bubble-wrap.system .bubble {
+      background: #fef9c3;
+      color: #713f12;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-style: italic;
+      font-size: 0.85em;
+      max-width: 80%;
+    }
+
+    .bubble-text {
+      display: block;
+      white-space: pre-wrap;
+      line-height: 1.45;
+    }
+
+    .bubble-time {
+      display: block;
+      font-size: 0.68rem;
+      opacity: 0.55;
+      margin-top: 4px;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 0.95em;
+      background: currentColor;
+      opacity: 0.7;
+      vertical-align: text-bottom;
+      margin-left: 1px;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Input bar ── */
+    .input-bar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .input-bar input {
+      flex: 1;
+      padding: 9px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .input-bar input:focus { border-color: #2563eb; }
+    .input-bar input:disabled { background: #f1f5f9; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+  <header>TimeFly — Agent Test Client</header>
+
+  <div class="connection-panel">
+    <div class="panel-title">Connection</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="baseUrl">Base URL</label>
+        <input id="baseUrl" type="text" value="http://localhost:8080">
+      </div>
+      <div class="form-field">
+        <label for="jwt">JWT Token</label>
+        <input id="jwt" type="text" placeholder="Paste token from /api/auth/login">
+      </div>
+      <div class="form-field">
+        <label for="tenantId">Tenant ID</label>
+        <input id="tenantId" type="text" placeholder="Paste tenantId from login response">
+      </div>
+      <button class="btn" id="connectBtn">Connect</button>
+    </div>
+    <div class="status-line" id="statusLine">Not connected</div>
+  </div>
+
+  <div class="chat-section">
+    <div class="messages" id="messages"></div>
+    <div class="input-bar">
+      <input id="messageInput" type="text" placeholder="Type a message…" disabled>
+      <button class="btn" id="sendBtn" disabled>Send</button>
+    </div>
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────
+    let baseUrl = 'http://localhost:8080';
+    let jwtToken = '';
+    let tenantId = '';
+    let bookingId = '';
+    let sessionId = '';
+    let ws = null;
+    let currentEventSource = null;
+    let streamingText = '';
+    let streamingBubble = null;
+
+    // ── DOM refs ───────────────────────────────────────────
+    const baseUrlInput   = document.getElementById('baseUrl');
+    const jwtInput       = document.getElementById('jwt');
+    const tenantInput    = document.getElementById('tenantId');
+    const connectBtn     = document.getElementById('connectBtn');
+    const statusLine     = document.getElementById('statusLine');
+    const messagesDiv    = document.getElementById('messages');
+    const messageInput   = document.getElementById('messageInput');
+    const sendBtn        = document.getElementById('sendBtn');
+
+    // ── Connect ────────────────────────────────────────────
+    connectBtn.addEventListener('click', async () => {
+      baseUrl   = baseUrlInput.value.trim().replace(/\/$/, '');
+      jwtToken  = jwtInput.value.trim();
+      tenantId  = tenantInput.value.trim();
+      sessionId = crypto.randomUUID();
+
+      if (ws) { ws.close(); ws = null; }
+
+      setStatus('Connecting…', false);
+      connectBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${baseUrl}/api/agent/session`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ sessionId })
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          throw new Error(`HTTP ${res.status}${txt ? ': ' + txt : ''}`);
+        }
+
+        const data = await res.json();
+        bookingId = data.bookingId;
+        setStatus(`Session created — opening WebSocket…`, false);
+
+        // Open WebSocket
+        const wsUrl = `${baseUrl.replace(/^http/, 'ws')}/ws/notifications?sessionId=${encodeURIComponent(sessionId)}`;
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          setStatus(`🟢 Connected | Booking: ${bookingId}`, false);
+          connectBtn.disabled = false;
+          setInputDisabled(false);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'PONG') return;
+            if (msg.type === 'AGENT_MESSAGE') {
+              appendBubble('assistant', msg.message || '');
+            } else {
+              appendBubble('system', msg.message || JSON.stringify(msg));
+            }
+          } catch {
+            appendBubble('system', event.data);
+          }
+        };
+
+        ws.onclose = () => {
+          setStatus('🔴 Disconnected — click Connect to reconnect', false);
+          connectBtn.disabled = false;
+          setInputDisabled(true);
+        };
+
+        ws.onerror = (e) => {
+          console.error('WebSocket error:', e);
+        };
+
+      } catch (err) {
+        setStatus(`Error: ${err.message}`, true);
+        connectBtn.disabled = false;
+      }
+    });
+
+    // ── Send ───────────────────────────────────────────────
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text || !bookingId || sendBtn.disabled) return;
+
+      appendBubble('user', text);
+      scrollToBottom();
+      messageInput.value = '';
+
+      // Create streaming assistant bubble
+      streamingText = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-wrap assistant';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.id = 'streaming-bubble';
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'bubble-text';
+
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      cursor.id = 'stream-cursor';
+
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'bubble-time';
+      timeSpan.textContent = formatTime(new Date());
+
+      bubble.appendChild(textSpan);
+      bubble.appendChild(cursor);
+      bubble.appendChild(timeSpan);
+      wrap.appendChild(bubble);
+      messagesDiv.appendChild(wrap);
+      streamingBubble = bubble;
+      scrollToBottom();
+
+      setInputDisabled(true);
+
+      if (currentEventSource) {
+        currentEventSource.abort();
+        currentEventSource = null;
+      }
+
+      const url = `${baseUrl}/api/agent/stream/${encodeURIComponent(bookingId)}`
+               + `?message=${encodeURIComponent(text)}`
+               + `&sessionId=${encodeURIComponent(sessionId)}`
+               + `&tenantId=${encodeURIComponent(tenantId)}`;
+
+      // Use fetch + ReadableStream instead of EventSource.
+      // The browser's native EventSource strips one leading character from every
+      // "data:" line per the SSE spec, which silently drops the space tokens that
+      // LLMs prepend to words (e.g. " World" → "World"), causing words to merge.
+      // Reading the raw bytes ourselves and slicing after "data:" preserves them.
+      const controller = new AbortController();
+      currentEventSource = controller;
+
+      // Closure-local string accumulator — one source of truth, never read back
+      // from the DOM (which could normalize whitespace).
+      let accumulated = '';
+
+      (async () => {
+        try {
+          const response = await fetch(url, { signal: controller.signal });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          outer: while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // SSE events are separated by blank lines (\n\n).
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop() ?? '';
+
+            for (const part of parts) {
+              for (const line of part.split('\n')) {
+                if (!line.startsWith('data:')) continue;
+                // Slice exactly 5 chars ("data:") — do NOT skip a leading space.
+                // Spring writes "data:{value}\n" with no extra space, so whatever
+                // follows the colon is the raw chunk content, spaces included.
+                const data = line.slice(5);
+                if (data === '[DONE]') {
+                  currentEventSource = null;
+                  const cur = document.getElementById('stream-cursor');
+                  if (cur) cur.remove();
+                  if (accumulated.includes('BOOKING_CONFIRMED:') && streamingBubble) {
+                    renderBookingConfirmed(streamingBubble, accumulated);
+                  }
+                  scrollToBottom();
+                  setInputDisabled(false);
+                  messageInput.focus();
+                  break outer;
+                }
+                accumulated += data;
+                const span = streamingBubble && streamingBubble.querySelector('.bubble-text');
+                if (span) span.innerHTML = parseMarkdown(accumulated);
+                scrollToBottom();
+              }
+            }
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+          console.error('SSE fetch error:', err);
+          currentEventSource = null;
+          const cur = document.getElementById('stream-cursor');
+          if (cur) cur.remove();
+          const span = streamingBubble && streamingBubble.querySelector('.bubble-text');
+          if (span && !span.textContent.trim()) {
+            span.textContent = 'Error receiving response.';
+          }
+          setInputDisabled(false);
+        }
+      })();
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // ── Markdown renderer ──────────────────────────────────
+    function parseMarkdown(text) {
+      if (!text) return '';
+
+      // Escape HTML to prevent XSS injection via AI output
+      const esc = s => s
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+      // Inline formatting applied to an already-escaped string
+      const inline = s => s
+          .replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>')
+          .replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
+
+      const lines = text.split('\n');
+      const out   = [];
+      let listOpen = false;
+
+      for (const raw of lines) {
+        const line = esc(raw);
+        if (line.startsWith('### ')) {
+          if (listOpen) { out.push('</ul>'); listOpen = false; }
+          out.push('<h4>' + inline(line.slice(4)) + '</h4>');
+        } else if (line.startsWith('## ')) {
+          if (listOpen) { out.push('</ul>'); listOpen = false; }
+          out.push('<h3>' + inline(line.slice(3)) + '</h3>');
+        } else if (/^[-*] /.test(line)) {
+          if (!listOpen) { out.push('<ul>'); listOpen = true; }
+          out.push('<li>' + inline(line.slice(2)) + '</li>');
+        } else {
+          if (listOpen) { out.push('</ul>'); listOpen = false; }
+          out.push(inline(line));
+        }
+      }
+      if (listOpen) out.push('</ul>');
+
+      // Blank lines → paragraph breaks; all other newlines → <br>
+      return out.join('\n')
+          .replace(/\n\n/g, '</p><p>')
+          .replace(/\n/g, '<br>');
+    }
+
+    // ── Booking confirmation card ──────────────────────────
+    function renderBookingConfirmed(bubble, text) {
+      try {
+        const jsonStr = text
+            .substring(text.indexOf('BOOKING_CONFIRMED:') + 'BOOKING_CONFIRMED:'.length)
+            .trim();
+        const d = JSON.parse(jsonStr);
+        const c = d.clientInfo   || {};
+        const t = d.travelerInfo || {};
+        const p = d.tripDetails  || {};
+
+        const esc  = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const val  = v => (v === null || v === undefined || v === '') ? '—' : esc(v);
+        const bool = v => v ? '✅ Yes' : '❌ No';
+        const arr  = v => (Array.isArray(v) && v.length) ? v.map(esc).join(', ') : '—';
+
+        const TD1 = 'padding:6px 10px;border-bottom:1px solid #e5e7eb;font-weight:500;color:#374151;width:40%';
+        const TD2 = 'padding:6px 10px;border-bottom:1px solid #e5e7eb;color:#111827';
+        const row = (label, value) =>
+            `<tr><td style="${TD1}">${label}</td><td style="${TD2}">${value}</td></tr>`;
+        const tbl = rows =>
+            `<table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:0.9em">${rows}</table>`;
+        const sec = title =>
+            `<div style="font-size:0.75em;font-weight:600;text-transform:uppercase;`+
+            `letter-spacing:0.05em;color:#6b7280;margin:12px 0 4px">${title}</div>`;
+
+        bubble.innerHTML =
+          `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:16px;max-width:90%">
+            <div style="font-weight:600;font-size:1em;margin-bottom:8px">✅ Booking Request Received</div>
+            ${sec('Client Information')}
+            ${tbl(row('Name',val(c.name))+row('Email',val(c.email))+row('Phone',val(c.phone)))}
+            ${sec('Traveler Information')}
+            ${tbl(row('Adults',val(t.adults))+row('Children',val(t.children))+row('Nationalities',arr(t.nationalities)))}
+            ${sec('Trip Details')}
+            ${tbl(
+              row('Trip Type',        val(p.tripType))        +
+              row('Departure City',   val(p.departureCity))   +
+              row('Destination',      val(p.destination))     +
+              row('Departure Date',   val(p.departureDate))   +
+              row('Return Date',      val(p.returnDate))      +
+              row('Flight Class',     val(p.flightPreference))+
+              row('Visa Required',    bool(p.visaRequired))   +
+              row('Travel Insurance', bool(p.travelInsurance))+
+              row('Airport Transfer', bool(p.airportTransfer))+
+              row('Budget',           val(p.budgetAmount)+(p.budgetCurrency?' '+esc(p.budgetCurrency):''))+
+              row('Special Requests', val(p.specialRequests))
+            )}
+          </div>`;
+      } catch (e) {
+        console.error('Failed to render BOOKING_CONFIRMED card:', e);
+      }
+    }
+
+    // ── Helpers ────────────────────────────────────────────
+    function appendBubble(role, text) {
+      const wrap = document.createElement('div');
+      wrap.className = `bubble-wrap ${role}`;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'bubble-text';
+      if (role === 'system' || role === 'assistant') {
+        textSpan.innerHTML = parseMarkdown(text);
+      } else {
+        textSpan.textContent = text;
+      }
+
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'bubble-time';
+      timeSpan.textContent = formatTime(new Date());
+
+      bubble.appendChild(textSpan);
+      bubble.appendChild(timeSpan);
+      wrap.appendChild(bubble);
+      messagesDiv.appendChild(wrap);
+      scrollToBottom();
+      return bubble;
+    }
+
+    function scrollToBottom() {
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function setStatus(text, isError) {
+      statusLine.textContent = text;
+      statusLine.className = 'status-line' + (isError ? ' error' : '');
+    }
+
+    function setInputDisabled(disabled) {
+      messageInput.disabled = disabled;
+      sendBtn.disabled = disabled;
+    }
+  </script>
+</body>
+</html>
