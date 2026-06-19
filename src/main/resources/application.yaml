@@ -35,9 +35,9 @@ travelagent:
         - /static/**
   agent:
     intake:
-      system-prompt: classpath:prompts/intake-system-prompt.txt
+      system-prompt: classpath:prompts/domain/travel/intake-system-prompt.txt
     extraction:
-      prompt: classpath:prompts/extraction-prompt.txt
+      prompt: classpath:prompts/domain/travel/extraction-prompt.txt
   jwt:
     secret: ${JWT_SECRET:travel-agent-dev-secret-key-minimum-256-bits-long!!}
     expiration-ms: 86400000

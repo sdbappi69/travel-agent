@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ops Portal — Task Inbox</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1e40af;
+      color: #fff;
+      padding: 14px 24px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 28px 32px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #64748b;
+    }
+
+    .form-group input {
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      background: #f8fafc;
+      transition: border-color 0.15s;
+    }
+
+    .form-group input:focus {
+      border-color: #2563eb;
+      background: #fff;
+    }
+
+    .btn {
+      padding: 9px 22px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+
+    .btn:hover:not(:disabled) { background: #1d4ed8; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+
+    .btn-secondary:hover:not(:disabled) { background: #e2e8f0; }
+
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .error-msg {
+      display: none;
+      color: #dc2626;
+      font-size: 0.83rem;
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+    }
+
+    .main-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .main-bar h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .placeholder-text {
+      color: #64748b;
+      font-size: 0.9rem;
+      padding: 24px 0;
+      text-align: center;
+    }
+
+    .inbox-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
+
+    .task-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .task-card-left {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-card-title {
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .task-meta-text {
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+
+    .sla-green  { font-size: 0.78rem; color: #16a34a; font-weight: 500; }
+    .sla-orange { font-size: 0.78rem; color: #ea580c; font-weight: 500; }
+    .sla-red    { font-size: 0.78rem; color: #dc2626; font-weight: 600; }
+
+    .task-list-error {
+      color: #dc2626;
+      font-size: 0.85rem;
+      padding: 12px 0;
+      text-align: center;
+    }
+
+    /* ── Detail panel ── */
+    .back-btn {
+      background: none;
+      border: none;
+      color: #2563eb;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .back-btn:hover { text-decoration: underline; }
+
+    .section-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b7280;
+      margin-bottom: 14px;
+    }
+
+    .context-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .context-table td {
+      padding: 5px 0;
+      vertical-align: top;
+      font-size: 0.88rem;
+    }
+
+    .context-table td:first-child {
+      color: #6b7280;
+      font-weight: 600;
+      width: 38%;
+      padding-right: 12px;
+    }
+
+    .context-table td:last-child {
+      color: #1e293b;
+    }
+
+    .instructions-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 0.88rem;
+      color: #1e293b;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .detail-error {
+      color: #dc2626;
+      font-size: 0.85rem;
+      padding: 12px 0;
+    }
+
+    .hidden { display: none; }
+
+    /* ── Flight options form ── */
+    .option-row {
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: #fafafa;
+    }
+
+    .option-inputs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .option-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .option-field label {
+      font-size: 0.72rem;
+      color: #6b7280;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .option-field input {
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      background: #fff;
+      outline: none;
+    }
+
+    .option-field input:focus { border-color: #2563eb; }
+
+    .btn-remove {
+      background: transparent;
+      border: none;
+      color: #dc2626;
+      cursor: pointer;
+      font-size: 0.82rem;
+      padding: 4px 6px;
+      align-self: flex-end;
+      margin-bottom: 2px;
+    }
+
+    .btn-remove:disabled { color: #9ca3af; cursor: not-allowed; }
+
+    .preview-box {
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin-top: 12px;
+      color: #1e293b;
+    }
+
+    .banner-success {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      padding: 10px 16px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-size: 0.88rem;
+    }
+
+    .banner-warning {
+      display: inline-block;
+      background: #fef3c7;
+      color: #92400e;
+      padding: 10px 16px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-size: 0.88rem;
+    }
+
+    .banner-error {
+      display: inline-block;
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 10px 16px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>Ops Portal — Task Inbox</header>
+
+  <div class="page">
+
+    <!-- Login Panel -->
+    <div id="loginPanel" class="card">
+      <div class="card-title">Sign In</div>
+
+      <div class="form-group">
+        <label for="baseUrl">Base URL</label>
+        <input id="baseUrl" type="text" value="http://localhost:8080">
+      </div>
+
+      <div class="form-group">
+        <label for="tenantSlugInput">Tenant Slug</label>
+        <input id="tenantSlugInput" type="text" placeholder="e.g. acme-travel">
+      </div>
+
+      <div class="form-group">
+        <label for="emailInput">Email</label>
+        <input id="emailInput" type="email" placeholder="owner@example.com">
+      </div>
+
+      <div class="form-group">
+        <label for="passwordInput">Password</label>
+        <input id="passwordInput" type="password" placeholder="••••••••">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" id="loginBtn">Login</button>
+      </div>
+
+      <div class="error-msg" id="loginError"></div>
+    </div>
+
+    <!-- Main Panel -->
+    <div id="mainPanel" class="hidden">
+      <div class="main-bar">
+        <h2 id="mainTitle">Task Inbox</h2>
+        <button class="btn btn-secondary" id="logoutBtn">Logout</button>
+      </div>
+      <div id="inboxView">
+        <div class="inbox-bar">
+          <button class="btn btn-secondary" id="refreshBtn">Refresh</button>
+        </div>
+        <div id="taskList"></div>
+      </div>
+
+      <div id="detailPanel" class="hidden"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────
+    let baseUrl   = 'http://localhost:8080';
+    let token     = '';
+    let tenantSlug = '';
+
+    // ── DOM refs ───────────────────────────────────────────
+    const loginPanel      = document.getElementById('loginPanel');
+    const mainPanel       = document.getElementById('mainPanel');
+    const loginBtn        = document.getElementById('loginBtn');
+    const logoutBtn       = document.getElementById('logoutBtn');
+    const refreshBtn      = document.getElementById('refreshBtn');
+    const taskList        = document.getElementById('taskList');
+    const inboxView       = document.getElementById('inboxView');
+    const detailPanel     = document.getElementById('detailPanel');
+    const loginError      = document.getElementById('loginError');
+    const baseUrlInput    = document.getElementById('baseUrl');
+    const tenantSlugInput = document.getElementById('tenantSlugInput');
+    const emailInput      = document.getElementById('emailInput');
+    const passwordInput   = document.getElementById('passwordInput');
+    const mainTitle       = document.getElementById('mainTitle');
+
+    // ── Helpers ────────────────────────────────────────────
+    function authHeader() {
+      return {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      };
+    }
+
+    function showError(msg) {
+      loginError.textContent = msg;
+      loginError.style.display = 'block';
+    }
+
+    function hideError() {
+      loginError.textContent = '';
+      loginError.style.display = 'none';
+    }
+
+    function showMain() {
+      loginPanel.classList.add('hidden');
+      mainPanel.classList.remove('hidden');
+      mainTitle.textContent = 'Task Inbox — ' + tenantSlug;
+    }
+
+    function showLogin() {
+      mainPanel.classList.add('hidden');
+      loginPanel.classList.remove('hidden');
+      hideError();
+    }
+
+    // ── Login ──────────────────────────────────────────────
+    loginBtn.addEventListener('click', async () => {
+      hideError();
+      baseUrl    = baseUrlInput.value.trim().replace(/\/$/, '');
+      const slug = tenantSlugInput.value.trim();
+      const email    = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!slug || !email || !password) {
+        showError('Please fill in all fields.');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in…';
+
+      try {
+        const res = await fetch(`${baseUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenantSlug: slug, email, password })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          showError(data.message || data.error || `Login failed (HTTP ${res.status})`);
+          return;
+        }
+
+        token      = data.token || data.accessToken || '';
+        tenantSlug = slug;
+        showMain();
+        fetchTasks();
+
+      } catch (err) {
+        showError('Network error: ' + err.message);
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
+      }
+    });
+
+    passwordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loginBtn.click();
+    });
+
+    // ── Task inbox ─────────────────────────────────────────
+    async function fetchTasks() {
+      taskList.innerHTML = '<p class="placeholder-text">Loading…</p>';
+      try {
+        const res = await fetch(`${baseUrl}/api/tasks`, { headers: authHeader() });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          taskList.innerHTML = `<p class="task-list-error">Failed to load tasks (HTTP ${res.status}): ${data.message || data.error || ''}</p>`;
+          return;
+        }
+        const tasks = await res.json();
+        renderTasks(tasks);
+      } catch (err) {
+        taskList.innerHTML = `<p class="task-list-error">Network error: ${err.message}</p>`;
+      }
+    }
+
+    function renderTasks(tasks) {
+      taskList.innerHTML = '';
+      if (!tasks || tasks.length === 0) {
+        taskList.innerHTML = '<p class="placeholder-text">No pending tasks.</p>';
+        return;
+      }
+      for (const task of tasks) {
+        taskList.appendChild(buildTaskCard(task));
+      }
+    }
+
+    function buildTaskCard(task) {
+      const title = [task.clientName, task.destination].filter(Boolean).join(' — ') || 'Unknown';
+
+      const card = document.createElement('div');
+      card.className = 'task-card';
+
+      const left = document.createElement('div');
+      left.className = 'task-card-left';
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'task-card-title';
+      titleEl.textContent = title;
+
+      const meta = document.createElement('div');
+      meta.className = 'task-card-meta';
+
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = task.type || '—';
+
+      const created = document.createElement('span');
+      created.className = 'task-meta-text';
+      created.textContent = 'Created: ' + formatDateTime(task.createdAt);
+
+      const sla = document.createElement('span');
+      const { text, cls } = formatSla(task.slaDeadlineAt);
+      sla.className = cls;
+      sla.textContent = text;
+
+      meta.appendChild(badge);
+      meta.appendChild(created);
+      meta.appendChild(sla);
+      left.appendChild(titleEl);
+      left.appendChild(meta);
+
+      const openBtn = document.createElement('button');
+      openBtn.className = 'btn btn-secondary';
+      openBtn.style.whiteSpace = 'nowrap';
+      openBtn.textContent = 'Open';
+      openBtn.addEventListener('click', () => openTask(task.taskId));
+
+      card.appendChild(left);
+      card.appendChild(openBtn);
+      return card;
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleString([], {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function formatSla(iso) {
+      if (!iso) return { text: 'No SLA', cls: 'task-meta-text' };
+      const msLeft = new Date(iso) - Date.now();
+      if (msLeft <= 0) {
+        return { text: '⚠ Overdue', cls: 'sla-red' };
+      }
+      const totalMins = Math.floor(msLeft / 60000);
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      const label = `${h}h ${m}m remaining`;
+      if (msLeft < 2 * 60 * 60 * 1000) {
+        return { text: label, cls: 'sla-orange' };
+      }
+      return { text: label, cls: 'sla-green' };
+    }
+
+    refreshBtn.addEventListener('click', fetchTasks);
+
+    // ── Detail view ────────────────────────────────────────
+    function showInbox() {
+      detailPanel.classList.add('hidden');
+      inboxView.classList.remove('hidden');
+    }
+
+    function showDetail() {
+      inboxView.classList.add('hidden');
+      detailPanel.classList.remove('hidden');
+    }
+
+    async function openTask(taskId) {
+      detailPanel.innerHTML = '<p class="placeholder-text">Loading…</p>';
+      showDetail();
+      try {
+        const res = await fetch(`${baseUrl}/api/tasks/${encodeURIComponent(taskId)}`, {
+          headers: authHeader()
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          detailPanel.innerHTML = `<button class="back-btn" onclick="goBack()">← Back to Inbox</button>
+            <p class="detail-error">Failed to load task (HTTP ${res.status}): ${data.message || data.error || ''}</p>`;
+          console.error('openTask error', res.status, data);
+          return;
+        }
+        const task = await res.json();
+        renderDetail(task);
+      } catch (err) {
+        detailPanel.innerHTML = `<button class="back-btn" onclick="goBack()">← Back to Inbox</button>
+          <p class="detail-error">Network error: ${err.message}</p>`;
+        console.error('openTask network error', err);
+      }
+    }
+
+    function goBack() {
+      showInbox();
+      fetchTasks();
+    }
+
+    function val(v) {
+      if (v === null || v === undefined || v === '') return '—';
+      return String(v);
+    }
+
+    function renderDetail(task) {
+      const ci = task.clientInfo   || {};
+      const ti = task.travelerInfo || {};
+      const td = task.tripDetails  || {};
+
+      const nationalities = Array.isArray(ti.nationalities) && ti.nationalities.length
+          ? ti.nationalities.join(', ')
+          : '—';
+
+      const budget = (td.budgetAmount && td.budgetCurrency)
+          ? `${td.budgetAmount} ${td.budgetCurrency}`
+          : (td.budgetAmount || '—');
+
+      const contextRows = [
+        ['Client Name',     val(ci.name)],
+        ['Email',           val(ci.email)],
+        ['Phone',           val(ci.phone)],
+        ['Adults',          val(ti.adults)],
+        ['Children',        val(ti.children)],
+        ['Nationalities',   nationalities],
+        ['Trip Type',       val(td.tripType)],
+        ['Departure City',  val(td.departureCity)],
+        ['Destination',     val(td.destination)],
+        ['Departure Date',  val(td.departureDate)],
+        ['Return Date',     val(td.returnDate)],
+        ['Flight Class',    val(td.flightPreference)],
+        ['Budget',          budget],
+        ['Special Requests',val(td.specialRequests)],
+      ];
+
+      const tableRows = contextRows.map(([label, value]) =>
+        `<tr><td>${label}</td><td>${escHtml(value)}</td></tr>`
+      ).join('');
+
+      detailPanel.innerHTML = `
+        <button class="back-btn" onclick="goBack()">← Back to Inbox</button>
+
+        <div class="section-card">
+          <div class="section-title">Booking Context</div>
+          <table class="context-table"><tbody>${tableRows}</tbody></table>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">AI Instructions</div>
+          <div class="instructions-box">${escHtml(task.instructions || '—')}</div>
+        </div>
+
+        <div class="section-card" id="optionsFormCard">
+          <div class="section-title">Flight Options</div>
+          <div id="optionRows"></div>
+          <button class="btn btn-secondary" id="addRowBtn" style="margin-top:8px;font-size:0.85rem;">+ Add Another Option</button>
+          <div style="margin-top:16px;">
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Staff Notes</label>
+            <textarea id="staffNotes" rows="3" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.88rem;resize:vertical;font-family:inherit;outline:none;"></textarea>
+          </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <button class="btn" id="submitOptionsBtn">Submit Options</button>
+            <div id="submitMsg"></div>
+          </div>
+        </div>
+
+        <div class="section-card hidden" id="previewSection">
+          <div class="section-title">Preview</div>
+          <button class="btn" id="generatePreviewBtn">Generate Preview</button>
+          <div id="previewBox" class="preview-box hidden"></div>
+          <div id="previewMsg"></div>
+        </div>
+
+        <div class="section-card hidden" id="sendSection">
+          <button class="btn" id="sendBtn">Send to Client</button>
+          <div id="sendMsg"></div>
+        </div>
+      `;
+
+      optionRowCount = 0;
+      appendOptionRow();
+
+      detailPanel.querySelector('#addRowBtn').addEventListener('click', appendOptionRow);
+      detailPanel.querySelector('#submitOptionsBtn').addEventListener('click', () => submitOptions(task.taskId));
+      detailPanel.querySelector('#generatePreviewBtn').addEventListener('click', () => generatePreview(task.taskId));
+      detailPanel.querySelector('#sendBtn').addEventListener('click', () => confirmSend(task.taskId));
+    }
+
+    function escHtml(str) {
+      return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+    }
+
+    // ── Flight options form ───────────────────────────────
+    let optionRowCount = 0;
+
+    function appendOptionRow() {
+      const rows = document.getElementById('optionRows');
+      if (!rows) return;
+
+      const row = document.createElement('div');
+      row.className = 'option-row';
+      row.innerHTML = `
+        <div class="option-inputs">
+          <div class="option-field">
+            <label>Airline</label>
+            <input type="text" data-field="airline" placeholder="e.g. Qatar Airways" style="min-width:120px;">
+          </div>
+          <div class="option-field">
+            <label>Flight No.</label>
+            <input type="text" data-field="flightNumber" placeholder="QR123" style="width:80px;">
+          </div>
+          <div class="option-field">
+            <label>Departure</label>
+            <input type="datetime-local" data-field="departureTime">
+          </div>
+          <div class="option-field">
+            <label>Arrival</label>
+            <input type="datetime-local" data-field="arrivalTime">
+          </div>
+          <div class="option-field">
+            <label>Price</label>
+            <input type="number" data-field="price" step="0.01" min="0" placeholder="0.00" style="width:90px;">
+          </div>
+          <div class="option-field">
+            <label>Currency</label>
+            <input type="text" data-field="currency" value="USD" style="width:65px;">
+          </div>
+          <div class="option-field">
+            <label>Stops</label>
+            <input type="number" data-field="stops" value="0" min="0" style="width:58px;">
+          </div>
+          <div class="option-field">
+            <label>Notes</label>
+            <input type="text" data-field="notes" placeholder="Optional notes" style="min-width:140px;">
+          </div>
+          <button class="btn-remove" type="button">Remove</button>
+        </div>`;
+
+      row.querySelector('.btn-remove').addEventListener('click', () => {
+        row.remove();
+        updateRemoveButtons();
+      });
+
+      rows.appendChild(row);
+      updateRemoveButtons();
+    }
+
+    function updateRemoveButtons() {
+      const rows = document.getElementById('optionRows');
+      if (!rows) return;
+      const allRows = rows.querySelectorAll('.option-row');
+      const only = allRows.length === 1;
+      allRows.forEach(r => { r.querySelector('.btn-remove').disabled = only; });
+    }
+
+    // ── Submit Options ────────────────────────────────────
+    async function submitOptions(taskId) {
+      const allRows = document.querySelectorAll('#optionRows .option-row');
+      const options = Array.from(allRows).map(row => {
+        const g = f => row.querySelector(`[data-field="${f}"]`).value;
+        const depRaw = g('departureTime');
+        const arrRaw = g('arrivalTime');
+        return {
+          airline:       g('airline'),
+          flightNumber:  g('flightNumber'),
+          departureTime: depRaw ? new Date(depRaw).toISOString() : '',
+          arrivalTime:   arrRaw ? new Date(arrRaw).toISOString() : '',
+          price:         parseFloat(g('price'))  || 0,
+          currency:      g('currency') || 'USD',
+          stops:         parseInt(g('stops'), 10) || 0,
+          notes:         g('notes'),
+        };
+      });
+
+      const staffNotes  = document.getElementById('staffNotes').value;
+      const submitBtn   = document.getElementById('submitOptionsBtn');
+      const submitMsg   = document.getElementById('submitMsg');
+
+      submitBtn.disabled    = true;
+      submitBtn.textContent = 'Submitting…';
+      submitMsg.innerHTML   = '';
+
+      try {
+        const res = await fetch(`${baseUrl}/api/tasks/${encodeURIComponent(taskId)}/resolve`, {
+          method: 'POST',
+          headers: authHeader(),
+          body: JSON.stringify({ options, staffNotes })
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          submitMsg.innerHTML   = `<span class="banner-error">Error: ${escHtml(data.message || data.error || `HTTP ${res.status}`)}</span>`;
+          submitBtn.disabled    = false;
+          submitBtn.textContent = 'Submit Options';
+          return;
+        }
+
+        // Freeze the form so it can't be resubmitted
+        document.querySelectorAll('#optionsFormCard input, #optionsFormCard textarea, #optionsFormCard button')
+          .forEach(el => { el.disabled = true; });
+        submitMsg.innerHTML = '<span class="banner-success">✅ Options submitted</span>';
+
+        document.getElementById('previewSection').classList.remove('hidden');
+
+      } catch (err) {
+        submitMsg.innerHTML   = `<span class="banner-error">Network error: ${escHtml(err.message)}</span>`;
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Submit Options';
+      }
+    }
+
+    // ── Generate Preview ──────────────────────────────────
+    async function generatePreview(taskId) {
+      const previewBtn = document.getElementById('generatePreviewBtn');
+      const previewBox = document.getElementById('previewBox');
+      const previewMsg = document.getElementById('previewMsg');
+
+      previewBtn.disabled    = true;
+      previewBtn.textContent = 'Generating…';
+      previewMsg.innerHTML   = '';
+
+      try {
+        const res  = await fetch(`${baseUrl}/api/tasks/${encodeURIComponent(taskId)}/preview`, {
+          method: 'POST',
+          headers: authHeader()
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          previewMsg.innerHTML   = `<span class="banner-error">Error: ${escHtml(data.message || data.error || `HTTP ${res.status}`)}</span>`;
+          previewBtn.disabled    = false;
+          previewBtn.textContent = 'Generate Preview';
+          return;
+        }
+
+        previewBox.textContent = data.formattedMessage || '';
+        previewBox.classList.remove('hidden');
+        previewBtn.disabled    = false;
+        previewBtn.textContent = 'Generate Preview';
+
+        document.getElementById('sendSection').classList.remove('hidden');
+
+      } catch (err) {
+        previewMsg.innerHTML   = `<span class="banner-error">Network error: ${escHtml(err.message)}</span>`;
+        previewBtn.disabled    = false;
+        previewBtn.textContent = 'Generate Preview';
+      }
+    }
+
+    // ── Send to Client ────────────────────────────────────
+    async function confirmSend(taskId) {
+      const sendBtn = document.getElementById('sendBtn');
+      const sendMsg = document.getElementById('sendMsg');
+
+      sendBtn.disabled    = true;
+      sendBtn.textContent = 'Sending…';
+      sendMsg.innerHTML   = '';
+
+      try {
+        const res = await fetch(`${baseUrl}/api/tasks/${encodeURIComponent(taskId)}/send`, {
+          method: 'POST',
+          headers: authHeader()
+        });
+
+        if (res.ok) {
+          sendMsg.innerHTML = '<span class="banner-success">✅ Sent to client successfully</span>';
+          setTimeout(() => { showInbox(); fetchTasks(); }, 1500);
+          return;
+        }
+
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 502) {
+          sendMsg.innerHTML = '<span class="banner-warning">Task was resolved but delivery failed.</span>';
+        } else {
+          sendMsg.innerHTML = `<span class="banner-error">Error: ${escHtml(data.message || data.error || `HTTP ${res.status}`)}</span>`;
+        }
+        sendBtn.disabled    = false;
+        sendBtn.textContent = 'Retry Send';
+
+      } catch (err) {
+        sendMsg.innerHTML   = `<span class="banner-error">Network error: ${escHtml(err.message)}</span>`;
+        sendBtn.disabled    = false;
+        sendBtn.textContent = 'Retry Send';
+      }
+    }
+
+    // ── Logout ─────────────────────────────────────────────
+    logoutBtn.addEventListener('click', () => {
+      token      = '';
+      tenantSlug = '';
+      passwordInput.value = '';
+      showLogin();
+    });
+  </script>
+
+</body>
+</html>
