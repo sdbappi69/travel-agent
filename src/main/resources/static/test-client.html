@@ -49,7 +49,7 @@
 
     .form-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr auto;
+      grid-template-columns: 1fr 1fr auto;
       gap: 8px;
       align-items: center;
     }
@@ -240,10 +240,6 @@
         <label for="jwt">JWT Token</label>
         <input id="jwt" type="text" placeholder="Paste token from /api/auth/login">
       </div>
-      <div class="form-field">
-        <label for="tenantId">Tenant ID</label>
-        <input id="tenantId" type="text" placeholder="Paste tenantId from login response">
-      </div>
       <button class="btn" id="connectBtn">Connect</button>
     </div>
     <div class="status-line" id="statusLine">Not connected</div>
@@ -261,7 +257,6 @@
     // ── State ──────────────────────────────────────────────
     let baseUrl = 'http://localhost:8080';
     let jwtToken = '';
-    let tenantId = '';
     let bookingId = '';
     let sessionId = '';
     let ws = null;
@@ -272,7 +267,6 @@
     // ── DOM refs ───────────────────────────────────────────
     const baseUrlInput   = document.getElementById('baseUrl');
     const jwtInput       = document.getElementById('jwt');
-    const tenantInput    = document.getElementById('tenantId');
     const connectBtn     = document.getElementById('connectBtn');
     const statusLine     = document.getElementById('statusLine');
     const messagesDiv    = document.getElementById('messages');
@@ -283,7 +277,6 @@
     connectBtn.addEventListener('click', async () => {
       baseUrl   = baseUrlInput.value.trim().replace(/\/$/, '');
       jwtToken  = jwtInput.value.trim();
-      tenantId  = tenantInput.value.trim();
       sessionId = crypto.randomUUID();
 
       if (ws) { ws.close(); ws = null; }
@@ -396,8 +389,7 @@
 
       const url = `${baseUrl}/api/agent/stream/${encodeURIComponent(bookingId)}`
                + `?message=${encodeURIComponent(text)}`
-               + `&sessionId=${encodeURIComponent(sessionId)}`
-               + `&tenantId=${encodeURIComponent(tenantId)}`;
+               + `&sessionId=${encodeURIComponent(sessionId)}`;
 
       // Use fetch + ReadableStream instead of EventSource.
       // The browser's native EventSource strips one leading character from every

@@ -52,10 +52,10 @@ public class AgentController {
     @GetMapping(value = "/stream/{bookingId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@PathVariable String bookingId,
                              @RequestParam String message,
-                             @RequestParam String sessionId,
-                             @RequestParam String tenantId) {
+                             @RequestParam String sessionId) {
         SseEmitter emitter = new SseEmitter(60_000L);
-        bookingService.getByIdForTenant(tenantId, bookingId);
+        Booking booking = bookingService.getById(bookingId);
+        String tenantId = booking.getTenantId();
         taskExecutor.execute(() ->
                 intakeAgent.streamResponse(tenantId, bookingId, sessionId, message, emitter));
         return emitter;

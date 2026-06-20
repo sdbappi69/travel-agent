@@ -61,4 +61,15 @@ public class BookingServiceImplement implements BookingService {
         return bookingRepository.findByTenantIdAndId(tenantId, bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
     }
+
+    // WARNING: not tenant-scoped — only safe to call when the caller has no
+    // other way to know the tenant yet (e.g. resolving tenant FROM the bookingId
+    // itself, such as in the unauthenticated SSE stream endpoint).
+    // Do not use this for any operation where tenant isolation must be enforced —
+    // use getByIdForTenant(tenantId, bookingId) instead.
+    @Override
+    public Booking getById(String bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
+    }
 }
