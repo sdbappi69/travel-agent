@@ -1,4 +1,4 @@
-package com.planet0088.aiagent.domain.travel.intake.controller;
+package com.planet0088.aiagent.domain.travel.controller;
 
 import com.planet0088.aiagent.domain.travel.booking.repository.BookingRepository;
 import com.planet0088.aiagent.engine.tenant.utility.TenantContext;
@@ -43,7 +43,7 @@ public class InternalBookingController {
     }
 
     @PostMapping("/{bookingId}/notify")
-    @PreAuthorize("hasAnyRole('OWNER', 'AGENT')")
+    @PreAuthorize("@staffRoleHelper.isStaff()")
     public ResponseEntity<Map<String, String>> notify(@PathVariable String bookingId,
                                                       @RequestBody NotifyRequest request) {
         String tenantId = TenantContext.get();

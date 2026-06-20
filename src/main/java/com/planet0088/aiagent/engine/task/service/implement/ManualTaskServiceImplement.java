@@ -10,6 +10,7 @@ import com.planet0088.aiagent.engine.task.repository.ManualTaskRepository;
 import com.planet0088.aiagent.engine.task.service.ManualTaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -21,6 +22,12 @@ import java.util.List;
 public class ManualTaskServiceImplement implements ManualTaskService {
 
     private final ManualTaskRepository manualTaskRepository;
+
+    @Value("${travelagent.task.sla.flight-research-seconds}")
+    private int flightResearchSlaSeconds;
+
+    @Value("${travelagent.task.sla.escalation-seconds}")
+    private int escalationSlaSeconds;
 
     @Override
     public ManualTask createFlightResearchTask(String tenantId, Booking booking) {
@@ -47,7 +54,7 @@ public class ManualTaskServiceImplement implements ManualTaskService {
                 .instructions(instructions)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
-                .slaDeadlineAt(Instant.now().plusSeconds(4 * 3600))
+                .slaDeadlineAt(Instant.now().plusSeconds(flightResearchSlaSeconds))
                 .build();
 
         return manualTaskRepository.save(task);
@@ -63,7 +70,7 @@ public class ManualTaskServiceImplement implements ManualTaskService {
                 .instructions("Escalation required: " + reason)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
-                .slaDeadlineAt(Instant.now().plusSeconds(3600))
+                .slaDeadlineAt(Instant.now().plusSeconds(escalationSlaSeconds))
                 .build();
 
         return manualTaskRepository.save(task);

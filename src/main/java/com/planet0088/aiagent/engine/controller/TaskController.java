@@ -1,4 +1,4 @@
-package com.planet0088.aiagent.engine.portal.controller;
+package com.planet0088.aiagent.engine.controller;
 
 import com.planet0088.aiagent.engine.portal.dto.PreviewResponse;
 import com.planet0088.aiagent.engine.portal.dto.TaskDetailResponse;
@@ -9,6 +9,7 @@ import com.planet0088.aiagent.domain.travel.flight.model.FlightResearchSubmissio
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -35,22 +36,25 @@ public class TaskController {
     private final TaskService taskService;
     private final RestTemplate restTemplate;
 
+    @Value("${travelagent.internal.base-url}")
+    private String internalBaseUrl;
+
     @GetMapping
-    @PreAuthorize("hasAnyRole('OWNER', 'AGENT')")
+    @PreAuthorize("@staffRoleHelper.isStaff()")
     public ResponseEntity<List<TaskSummaryResponse>> getPendingTasks() {
         String tenantId = TenantContext.get();
         return ResponseEntity.ok(taskService.getPendingTasks(tenantId));
     }
 
     @GetMapping("/{taskId}")
-    @PreAuthorize("hasAnyRole('OWNER', 'AGENT')")
+    @PreAuthorize("@staffRoleHelper.isStaff()")
     public ResponseEntity<TaskDetailResponse> getTaskDetail(@PathVariable String taskId) {
         String tenantId = TenantContext.get();
         return ResponseEntity.ok(taskService.getTaskDetail(tenantId, taskId));
     }
 
     @PostMapping("/{taskId}/resolve")
-    @PreAuthorize("hasAnyRole('OWNER', 'AGENT')")
+    @PreAuthorize("@staffRoleHelper.isStaff()")
     public ResponseEntity<Object> resolve(@PathVariable String taskId,
                                           @RequestBody FlightResearchSubmission submission) {
         String tenantId = TenantContext.get();
@@ -63,14 +67,14 @@ public class TaskController {
     }
 
     @PostMapping("/{taskId}/preview")
-    @PreAuthorize("hasAnyRole('OWNER', 'AGENT')")
+    @PreAuthorize("@staffRoleHelper.isStaff()")
     public ResponseEntity<PreviewResponse> preview(@PathVariable String taskId) {
         String tenantId = TenantContext.get();
         return ResponseEntity.ok(taskService.generatePreview(tenantId, taskId));
     }
 
     @PostMapping("/{taskId}/send")
-    @PreAuthorize("hasAnyRole('OWNER', 'AGENT')")
+    @PreAuthorize("@staffRoleHelper.isStaff()")
     public ResponseEntity<Map<String, String>> send(@PathVariable String taskId,
                                                      HttpServletRequest request) {
         String tenantId = TenantContext.get();
@@ -97,7 +101,7 @@ public class TaskController {
             headers.set(HttpHeaders.AUTHORIZATION, authHeader);
         }
 
-        String notifyUrl = "http://localhost:8080/api/internal/bookings/"
+        String notifyUrl = internalBaseUrl + "/api/internal/bookings/"
                 + taskDetail.getBookingId() + "/notify";
 
         try {

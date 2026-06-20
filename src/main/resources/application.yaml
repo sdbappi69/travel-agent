@@ -33,11 +33,26 @@ travelagent:
         - /**.css
         - /**.js
         - /static/**
+    roles:
+      staff:
+        - OWNER
+        - AGENT
   agent:
     intake:
       system-prompt: classpath:prompts/domain/travel/intake-system-prompt.txt
     extraction:
       prompt: classpath:prompts/domain/travel/extraction-prompt.txt
+    model: ${spring.ai.openai.chat.options.model}
+    pricing:
+      prompt-token-cost: 0.00000015
+      completion-token-cost: 0.0000006
+    history-token-budget: 2000
+  task:
+    sla:
+      flight-research-seconds: 14400
+      escalation-seconds: 3600
+  internal:
+    base-url: http://localhost:8080
   jwt:
     secret: ${JWT_SECRET:travel-agent-dev-secret-key-minimum-256-bits-long!!}
     expiration-ms: 86400000

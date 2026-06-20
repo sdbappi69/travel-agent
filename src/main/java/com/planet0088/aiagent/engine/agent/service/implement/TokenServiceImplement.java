@@ -8,6 +8,7 @@ import com.planet0088.aiagent.engine.agent.model.TokenUsage;
 import com.planet0088.aiagent.engine.agent.service.TokenService;
 import com.planet0088.aiagent.engine.conversation.model.ConversationMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -21,7 +22,14 @@ public class TokenServiceImplement implements TokenService {
     private final EncodingRegistry registry = Encodings.newLazyEncodingRegistry();
     private final Encoding encoding = registry.getEncodingForModel(ModelType.GPT_4O_MINI);
 
-    private static final int HISTORY_TOKEN_BUDGET = 2000;
+    @Value("${travelagent.agent.history-token-budget}")
+    private int historyTokenBudget;
+
+    @Value("${travelagent.agent.pricing.prompt-token-cost}")
+    private double promptTokenCost;
+
+    @Value("${travelagent.agent.pricing.completion-token-cost}")
+    private double completionTokenCost;
 
     @Override
     public int countTokens(String text) {
@@ -50,7 +58,7 @@ public class TokenServiceImplement implements TokenService {
             int msgTokens = countTokens(msg.getContent()) + 4;
             boolean mustKeep = kept.size() < 2; // always keep at least the last 2
 
-            if (mustKeep || tokens + msgTokens <= HISTORY_TOKEN_BUDGET) {
+            if (mustKeep || tokens + msgTokens <= historyTokenBudget) {
                 kept.add(0, msg);
                 tokens += msgTokens;
             } else {
@@ -64,7 +72,7 @@ public class TokenServiceImplement implements TokenService {
 
     @Override
     public TokenUsage buildUsageRecord(String model, int promptTokens, int completionTokens) {
-        double cost = promptTokens * 0.00000015 + completionTokens * 0.0000006;
+        double cost = promptTokens * promptTokenCost + completionTokens * completionTokenCost;
         return TokenUsage.builder()
                 .model(model)
                 .promptTokens(promptTokens)
