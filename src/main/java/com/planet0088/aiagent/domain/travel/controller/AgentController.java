@@ -1,4 +1,4 @@
-package com.planet0088.aiagent.domain.travel.intake.controller;
+package com.planet0088.aiagent.domain.travel.controller;
 
 import com.planet0088.aiagent.domain.travel.booking.model.Booking;
 import com.planet0088.aiagent.domain.travel.booking.service.BookingService;

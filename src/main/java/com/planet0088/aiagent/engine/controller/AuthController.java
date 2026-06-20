@@ -1,4 +1,4 @@
-package com.planet0088.aiagent.engine.auth.controller;
+package com.planet0088.aiagent.engine.controller;
 
 import com.planet0088.aiagent.engine.auth.dto.LoginRequest;
 import com.planet0088.aiagent.engine.auth.dto.LoginResponse;

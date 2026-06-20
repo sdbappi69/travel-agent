@@ -11,11 +11,17 @@ import java.util.List;
 public class SecurityProperties {
 
     private PermitAll permitAll = new PermitAll();
+    private Roles roles = new Roles();
 
     @Data
     public static class PermitAll {
         private List<String> post = new ArrayList<>();
         private List<String> get  = new ArrayList<>();
         private List<String> any  = new ArrayList<>();
+    }
+
+    @Data
+    public static class Roles {
+        private List<String> staff = new ArrayList<>();
     }
 }

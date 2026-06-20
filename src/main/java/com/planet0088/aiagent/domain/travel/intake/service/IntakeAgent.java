@@ -63,6 +63,15 @@ public class IntakeAgent {
     @Value("${travelagent.agent.extraction.prompt}")
     private Resource extractionPromptResource;
 
+    @Value("${travelagent.agent.model}")
+    private String agentModel;
+
+    @Value("${travelagent.agent.pricing.prompt-token-cost}")
+    private double promptTokenCost;
+
+    @Value("${travelagent.agent.pricing.completion-token-cost}")
+    private double completionTokenCost;
+
     private String systemPrompt;
     private String extractionPrompt;
 
@@ -126,11 +135,11 @@ public class IntakeAgent {
                     .tenantId(tenantId)
                     .bookingId(bookingId)
                     .conversationId(bookingId)
-                    .model("gpt-4o-mini")
+                    .model(agentModel)
                     .promptTokens(promptTokens)
                     .completionTokens(completionTokens)
                     .totalTokens(promptTokens + completionTokens)
-                    .estimatedCostUsd(promptTokens * 0.00000015 + completionTokens * 0.0000006)
+                    .estimatedCostUsd(promptTokens * promptTokenCost + completionTokens * completionTokenCost)
                     .createdAt(Instant.now())
                     .build());
 
@@ -209,12 +218,12 @@ public class IntakeAgent {
 
                     int completionTokens = tokenService.countTokens(fullResponse.toString());
                     int totalTokens = promptTokens + completionTokens;
-                    double cost = promptTokens * 0.00000015 + completionTokens * 0.0000006;
+                    double cost = promptTokens * promptTokenCost + completionTokens * completionTokenCost;
                     TokenUsage usage = TokenUsage.builder()
                             .tenantId(tenantId)
                             .bookingId(bookingId)
                             .conversationId(bookingId)
-                            .model("gpt-4o-mini")
+                            .model(agentModel)
                             .promptTokens(promptTokens)
                             .completionTokens(completionTokens)
                             .totalTokens(totalTokens)
@@ -282,11 +291,11 @@ public class IntakeAgent {
                     .tenantId(tenantId)
                     .bookingId(bookingId)
                     .conversationId(bookingId)
-                    .model("gpt-4o-mini")
+                    .model(agentModel)
                     .promptTokens(promptTokens)
                     .completionTokens(completionTokens)
                     .totalTokens(promptTokens + completionTokens)
-                    .estimatedCostUsd(promptTokens * 0.00000015 + completionTokens * 0.0000006)
+                    .estimatedCostUsd(promptTokens * promptTokenCost + completionTokens * completionTokenCost)
                     .createdAt(Instant.now())
                     .build();
             tokenUsageRepository.save(usage);

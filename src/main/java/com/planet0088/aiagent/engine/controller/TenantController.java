@@ -1,4 +1,4 @@
-package com.planet0088.aiagent.engine.tenant.controller;
+package com.planet0088.aiagent.engine.controller;
 
 import com.planet0088.aiagent.engine.tenant.dto.RegisterTenantRequest;
 import com.planet0088.aiagent.engine.tenant.model.Tenant;
