@@ -15,4 +15,11 @@ public interface BookingService {
                            TripDetails tripDetails);
 
     Booking getByIdForTenant(String tenantId, String bookingId);
+
+    // WARNING: not tenant-scoped — only safe to call when the caller has no
+    // other way to know the tenant yet (e.g. resolving tenant FROM the bookingId
+    // itself, such as in the unauthenticated SSE stream endpoint).
+    // Do not use this for any operation where tenant isolation must be enforced —
+    // use getByIdForTenant(tenantId, bookingId) instead.
+    Booking getById(String bookingId);
 }
