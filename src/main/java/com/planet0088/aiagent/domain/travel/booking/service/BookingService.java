@@ -1,9 +1,13 @@
 package com.planet0088.aiagent.domain.travel.booking.service;
 
+import com.planet0088.aiagent.domain.travel.booking.dto.BookingDetailResponse;
+import com.planet0088.aiagent.domain.travel.booking.dto.BookingSummaryResponse;
 import com.planet0088.aiagent.domain.travel.booking.model.Booking;
 import com.planet0088.aiagent.domain.travel.booking.model.ClientInfo;
 import com.planet0088.aiagent.domain.travel.booking.model.TravelerInfo;
 import com.planet0088.aiagent.domain.travel.booking.model.TripDetails;
+
+import java.util.List;
 
 public interface BookingService {
 
@@ -22,4 +26,8 @@ public interface BookingService {
     // Do not use this for any operation where tenant isolation must be enforced —
     // use getByIdForTenant(tenantId, bookingId) instead.
     Booking getById(String bookingId);
+
+    List<BookingSummaryResponse> listBookings(String tenantId, String email);
+
+    BookingDetailResponse getBookingDetail(String tenantId, String bookingId);
 }

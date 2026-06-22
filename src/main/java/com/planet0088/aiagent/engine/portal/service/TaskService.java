@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface TaskService {
 
-    List<TaskSummaryResponse> getPendingTasks(String tenantId);
+    List<TaskSummaryResponse> getActiveTasks(String tenantId);
 
     TaskDetailResponse getTaskDetail(String tenantId, String taskId);
 

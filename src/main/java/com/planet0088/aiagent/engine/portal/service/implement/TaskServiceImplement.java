@@ -33,8 +33,9 @@ public class TaskServiceImplement implements TaskService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public List<TaskSummaryResponse> getPendingTasks(String tenantId) {
-        List<ManualTask> tasks = manualTaskRepository.findByTenantIdAndStatus(tenantId, ManualTaskStatus.PENDING);
+    public List<TaskSummaryResponse> getActiveTasks(String tenantId) {
+        List<ManualTask> tasks = manualTaskRepository.findByTenantIdAndStatusIn(
+                tenantId, List.of(ManualTaskStatus.PENDING, ManualTaskStatus.IN_PROGRESS));
 
         return tasks.stream()
                 .map(task -> {

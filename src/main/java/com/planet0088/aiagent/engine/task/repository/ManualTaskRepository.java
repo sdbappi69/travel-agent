@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface ManualTaskRepository extends MongoRepository<ManualTask, String> {
     List<ManualTask> findByTenantIdAndStatus(String tenantId, ManualTaskStatus status);
+    List<ManualTask> findByTenantIdAndStatusIn(String tenantId, List<ManualTaskStatus> statuses);
     List<ManualTask> findByTenantIdAndBookingId(String tenantId, String bookingId);
 }

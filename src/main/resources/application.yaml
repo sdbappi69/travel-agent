@@ -26,6 +26,8 @@ travelagent:
       get:
         - /api/health
         - /api/agent/stream/**
+        - /api/agent/bookings
+        - /api/agent/bookings/**
       any:
         - /ws/**
         - /

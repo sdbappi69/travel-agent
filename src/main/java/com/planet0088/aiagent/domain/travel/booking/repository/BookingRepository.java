@@ -14,4 +14,5 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
     Optional<Booking> findByTenantIdAndSessionId(String tenantId, String sessionId);
     Page<Booking> findByTenantId(String tenantId, Pageable pageable);
     List<Booking> findByTenantIdAndStatus(String tenantId, BookingStatus status);
+    List<Booking> findByTenantIdAndClientInfoEmail(String tenantId, String email);
 }

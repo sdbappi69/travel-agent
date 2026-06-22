@@ -545,7 +545,7 @@
     function renderTasks(tasks) {
       taskList.innerHTML = '';
       if (!tasks || tasks.length === 0) {
-        taskList.innerHTML = '<p class="placeholder-text">No pending tasks.</p>';
+        taskList.innerHTML = '<p class="placeholder-text">No active tasks.</p>';
         return;
       }
       for (const task of tasks) {
@@ -583,6 +583,13 @@
       sla.textContent = text;
 
       meta.appendChild(badge);
+      if (task.status === 'IN_PROGRESS') {
+        const draftBadge = document.createElement('span');
+        draftBadge.className = 'badge';
+        draftBadge.style.cssText = 'background:#fef3c7;color:#92400e;';
+        draftBadge.textContent = '📝 Draft — options submitted';
+        meta.appendChild(draftBadge);
+      }
       meta.appendChild(created);
       meta.appendChild(sla);
       left.appendChild(titleEl);
@@ -744,9 +751,35 @@
       `;
 
       optionRowCount = 0;
-      appendOptionRow();
 
-      detailPanel.querySelector('#addRowBtn').addEventListener('click', appendOptionRow);
+      if (task.status === 'IN_PROGRESS' && task.responseData) {
+        let parsed = null;
+        try { parsed = JSON.parse(task.responseData); } catch (e) {}
+
+        if (parsed && Array.isArray(parsed.options) && parsed.options.length > 0) {
+          for (const opt of parsed.options) {
+            appendOptionRow(opt);
+          }
+        } else {
+          appendOptionRow();
+        }
+
+        const staffNotesEl = detailPanel.querySelector('#staffNotes');
+        if (staffNotesEl && parsed && parsed.staffNotes) {
+          staffNotesEl.value = parsed.staffNotes;
+        }
+
+        const submitMsg = detailPanel.querySelector('#submitMsg');
+        if (submitMsg) {
+          submitMsg.innerHTML = '<span class="banner-warning">Draft already submitted — edit and re-submit if needed, or go straight to Generate Preview.</span>';
+        }
+
+        detailPanel.querySelector('#previewSection').classList.remove('hidden');
+      } else {
+        appendOptionRow();
+      }
+
+      detailPanel.querySelector('#addRowBtn').addEventListener('click', () => appendOptionRow());
       detailPanel.querySelector('#submitOptionsBtn').addEventListener('click', () => submitOptions(task.taskId));
       detailPanel.querySelector('#generatePreviewBtn').addEventListener('click', () => generatePreview(task.taskId));
       detailPanel.querySelector('#sendBtn').addEventListener('click', () => confirmSend(task.taskId));
@@ -763,7 +796,14 @@
     // ── Flight options form ───────────────────────────────
     let optionRowCount = 0;
 
-    function appendOptionRow() {
+    function toDatetimeLocalValue(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function appendOptionRow(data) {
       const rows = document.getElementById('optionRows');
       if (!rows) return;
 
@@ -805,6 +845,21 @@
           </div>
           <button class="btn-remove" type="button">Remove</button>
         </div>`;
+
+      if (data) {
+        const set = (field, v) => {
+          const el = row.querySelector(`[data-field="${field}"]`);
+          if (el && v !== undefined && v !== null) el.value = v;
+        };
+        set('airline',      data.airline);
+        set('flightNumber', data.flightNumber);
+        set('departureTime', toDatetimeLocalValue(data.departureTime));
+        set('arrivalTime',   toDatetimeLocalValue(data.arrivalTime));
+        set('price',    data.price ?? '');
+        set('currency', data.currency || 'USD');
+        set('stops',    data.stops ?? 0);
+        set('notes',    data.notes || '');
+      }
 
       row.querySelector('.btn-remove').addEventListener('click', () => {
         row.remove();

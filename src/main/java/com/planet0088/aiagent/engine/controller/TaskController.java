@@ -43,7 +43,7 @@ public class TaskController {
     @PreAuthorize("@staffRoleHelper.isStaff()")
     public ResponseEntity<List<TaskSummaryResponse>> getPendingTasks() {
         String tenantId = TenantContext.get();
-        return ResponseEntity.ok(taskService.getPendingTasks(tenantId));
+        return ResponseEntity.ok(taskService.getActiveTasks(tenantId));
     }
 
     @GetMapping("/{taskId}")
